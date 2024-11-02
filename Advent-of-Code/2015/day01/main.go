@@ -22,8 +22,17 @@
 *     - ))) and )())()) both result in floor -3.
 * 
 * To what floor do the instructions take Santa?
-* 
-* To play, please identify yourself via one of these services:
+*
+* --- Part Two ---
+*
+* Now, given the same instructions, find the position of the first character that causes him to enter the basement (floor -1). The first character in the instructions has position 1, the second character has position 2, and so on.
+*
+* For example:
+*
+*     ) causes him to enter the basement at character position 1.
+*     ()()) causes him to enter the basement at character position 5.
+*
+* What is the position of the character that causes Santa to first enter the basement?
 */
 
 package main
@@ -40,20 +49,64 @@ func main() {
     return
   }
 
-  floor := 0
   directions := os.Args[1]
 
+  // Part 1
+  floor, err := getCorrectFloor(directions)
+  if err != nil {
+    fmt.Println("Error:", err)
+    return
+  }
+  fmt.Println("Part 1 | Floor:", floor)
+
+  // Part 2
+  floor, err = getBasementPosition(directions)
+  if err != nil {
+    fmt.Println("Error:", err)
+    return
+  }
+  fmt.Println("Part 2 | -1 at Index:", floor, "(index of 0 means the directions do not go to the basement)")
+}
+
+func getNextFloor(direction rune, floor *int) error {
+  switch direction {
+  case '(':
+    *floor++
+  case ')':
+    *floor--
+  default:
+    return fmt.Errorf("'%c' is not valid character, please use '(' or ')'", direction)
+  }
+  return nil
+}
+
+func getCorrectFloor(directions string) (int, error) {
+  floor := 0
+
   for _, direction := range directions {
-    switch direction{
-    case '(':
-      floor++
-    case ')':
-      floor--
-    default:
-      fmt.Printf("'%c' is not valid character, please use '(' or ')'\n", direction)
-      return
+    err := getNextFloor(direction, &floor)
+
+    if err != nil {
+      return 0, err
     }
   }
+  return floor, nil
+}
 
-  fmt.Println("Floor:", floor)
+func getBasementPosition(directions string) (int, error) {
+  floor := 0
+
+  for index, direction := range directions {
+    err := getNextFloor(direction, &floor)
+
+    if err != nil {
+      return 0, err
+    }
+
+    if floor == -1 {
+      index++
+      return index, nil
+    }
+  }
+  return 0, nil
 }
