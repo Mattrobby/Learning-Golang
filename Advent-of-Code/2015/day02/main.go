@@ -8,10 +8,23 @@
 *
 * For example:
 *
-*     A present with dimensions 2x3x4 requires 2*6 + 2*12 + 2*8 = 52 square feet of wrapping paper plus 6 square feet of slack, for a total of 58 square feet.
-*     A present with dimensions 1x1x10 requires 2*1 + 2*10 + 2*10 = 42 square feet of wrapping paper plus 1 square foot of slack, for a total of 43 square feet.
+*   - A present with dimensions 2x3x4 requires 2*6 + 2*12 + 2*8 = 52 square feet of wrapping paper plus 6 square feet of slack, for a total of 58 square feet.
+*   - A present with dimensions 1x1x10 requires 2*1 + 2*10 + 2*10 = 42 square feet of wrapping paper plus 1 square foot of slack, for a total of 43 square feet.
 *
 * All numbers in the elves' list are in feet. How many total square feet of wrapping paper should they order?
+*
+* --- Part Two ---
+*
+* The elves are also running low on ribbon. Ribbon is all the same width, so they only have to worry about the length they need to order, which they would again like to be exact.
+*
+* The ribbon required to wrap a present is the shortest distance around its sides, or the smallest perimeter of any one face. Each present also requires a bow made out of ribbon as well; the feet of ribbon required for the perfect bow is equal to the cubic feet of volume of the present. Don't ask how they tie the bow, though; they'll never tell.
+*
+* For example:
+*
+*   - A present with dimensions 2x3x4 requires 2+2+3+3 = 10 feet of ribbon to wrap the present plus 2*3*4 = 24 feet of ribbon for the bow, for a total of 34 feet.
+*   - A present with dimensions 1x1x10 requires 1+1+1+1 = 4 feet of ribbon to wrap the present plus 1*1*10 = 10 feet of ribbon for the bow, for a total of 14 feet.
+*
+* How many total feet of ribbon should they order?
 */
 
 package main
@@ -20,6 +33,7 @@ import(
   "fmt"
   "os"
   "bufio"
+  "sort"
   "strings"
   "strconv"
 )
@@ -31,27 +45,35 @@ func main() {
   }
   defer file.Close()
 
-  totalPaper := 0
+  totalPaper  := 0
+  totalRibbon := 0
 
   scanner := bufio.NewScanner(file)
   for scanner.Scan() {
     paper, err := getPaperSurfaceArea(scanner.Text())
-
     if err != nil {
-      fmt.Println("Error:",)
+      fmt.Println("Error calculating paper surface area:", err)
+      return
     }
-
     totalPaper += paper
+
+    ribbon, err := getRibbonLength(scanner.Text())
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    totalRibbon += ribbon
   }
 
-  fmt.Println("Total Paper Needed:", totalPaper, "ft^2")
+  fmt.Println("Part 1 | Total Paper Needed: ", totalPaper, "ft^2")
+  fmt.Println("Part 2 | Total Ribbon Needed:", totalRibbon, "ft")
 }
 
-func getPaperSurfaceArea(dimensions string) (totalPaperSurfaceArea int, err error){
+func getDimensions(dimensions string) (length, width, height int, err error) {
   dimensionValues := strings.Split(dimensions, "x")
 
   if len(dimensionValues) != 3 {
-    return 0, fmt.Errorf("invalid dimensions format")
+    return 0, 0, 0, fmt.Errorf("invalid dimensions format")
   }
 
   length, lengthErr := strconv.Atoi(dimensionValues[0])
@@ -59,7 +81,17 @@ func getPaperSurfaceArea(dimensions string) (totalPaperSurfaceArea int, err erro
   height, heightErr := strconv.Atoi(dimensionValues[2])
 
   if lengthErr != nil || widthErr != nil || heightErr != nil {
-    return 0, fmt.Errorf("Converting string to integer failed")
+    return 0, 0, 0, fmt.Errorf("Converting string to integer failed")
+  }
+
+  return length, width, height, err
+}
+
+func getPaperSurfaceArea(dimensions string) (paperSurfaceArea int, err error){
+  length, width, height, err := getDimensions(dimensions)
+
+  if err != nil {
+    return 0, err
   }
 
   side1 := length * width
@@ -80,7 +112,21 @@ func getPaperSurfaceArea(dimensions string) (totalPaperSurfaceArea int, err erro
     slack = side3
   }
 
-  totalPaperSurfaceArea = area + slack
+  paperSurfaceArea = area + slack
+  return paperSurfaceArea, nil
+}
 
-  return totalPaperSurfaceArea, nil
+func getRibbonLength(dimensions string) (ribbonLength int, err error)  {
+  length, width, height, err := getDimensions(dimensions)
+
+  if err != nil {
+    return 0, err
+  }
+
+  sides := []int{length, width, height}
+  sort.Ints(sides)
+  sidesPerimeter := 2 * (sides[0] + sides[1])
+
+  ribbonLength = (length * width * height) + sidesPerimeter
+  return ribbonLength, nil
 }
