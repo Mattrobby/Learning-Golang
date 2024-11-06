@@ -39,17 +39,16 @@ package main
 
 import (
   "fmt"
-  "os"
+  "io/ioutil"
 )
 
 func main() {
-  if len(os.Args) < 2 {
-    fmt.Println(`Please enter the directions for Santa as a argument:
-    Example: day1 "<directions>"`)
-    return
+  data, err := ioutil.ReadFile("input.txt")
+  if err != nil {
+    fmt.Println("Error reading file:", err)
   }
 
-  directions := os.Args[1]
+  directions := string(data)
 
   // Part 1
   floor, err := getCorrectFloor(directions)
@@ -65,7 +64,12 @@ func main() {
     fmt.Println("Error:", err)
     return
   }
-  fmt.Println("Part 2 | -1 at Index:", floor, "(index of 0 means the directions do not go to the basement)")
+
+  if floor == 0 {
+    fmt.Println("Elevator did not go to the basement")
+  } else {
+    fmt.Println("Part 2 | -1 at Index:", floor)
+  }
 }
 
 func getNextFloor(direction rune, floor *int) error {
@@ -74,6 +78,7 @@ func getNextFloor(direction rune, floor *int) error {
     *floor++
   case ')':
     *floor--
+  case '\n':
   default:
     return fmt.Errorf("'%c' is not valid character, please use '(' or ')'", direction)
   }
